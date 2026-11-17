@@ -66,6 +66,17 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1f
 .col.urg .csp{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--amb-bg);color:var(--amb);font-size:13px;white-space:pre-wrap}
 .empty{color:var(--mut);font-size:13.5px;padding:14px;border:1px dashed var(--line);border-radius:12px}
 nav{display:none}
+[hidden]{display:none!important}
+.icon{padding:9px 11px;display:grid;place-items:center}.icon svg{width:20px;height:20px}
+.pick{display:flex;gap:8px}.pick input{flex:1;min-width:0}.pick .btn{padding:0 16px;font-size:22px;line-height:1}
+.cwrap{padding:20px;display:grid;gap:12px}
+#cview{display:grid;gap:12px}#cf{padding:0}
+.chead{display:flex;gap:10px;align-items:center}.chead h3{flex:1;margin:0;font:800 20px var(--head)}
+#clist{max-height:55vh;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.crow{display:block;width:100%;text-align:left;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;margin-bottom:8px;transition:transform .15s var(--ease),border-color .15s}
+.crow:hover{border-color:var(--mut)}.crow:active{transform:scale(.985)}
+.crow strong{display:block;font:800 15px/1.25 var(--head)}.crow span{display:block;color:var(--mut);font-size:13px}
+.tag.warn{display:inline-block;margin-top:6px;background:var(--amb-bg);color:var(--amb);border-color:var(--amb-line)}
 dialog:not([open]){display:none}
 dialog{position:fixed;top:0;bottom:0;left:0;right:0;margin:auto;height:fit-content;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:92vh;background:var(--card);color:var(--ink);box-shadow:0 24px 60px rgba(0,0,0,.28)}
 dialog[open]{animation:pop .22s var(--ease)}
@@ -112,6 +123,7 @@ textarea{resize:vertical;min-height:84px}
   </div>
   <div class="sp"></div>
   <input class="search" id="q" type="search" placeholder="Buscar cliente o producto" aria-label="Buscar pedido">
+  <button class="btn ghost icon" id="cbtn" type="button" aria-label="Clientes" title="Clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5M4 12v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V12"/></svg></button>
   <button class="btn" id="new">Nuevo pedido</button>
 </header>
 
@@ -122,7 +134,7 @@ textarea{resize:vertical;min-height:84px}
 <dialog id="dlg">
   <form id="f" method="dialog">
     <h3 id="ft">Nuevo pedido</h3>
-    <label>Cliente<input name="cliente" required autocomplete="off"></label>
+    <label>Cliente<span class="pick"><input name="cliente" required autocomplete="off"><button type="button" class="btn ghost" id="pickc" aria-label="Elegir cliente registrado" title="Elegir cliente registrado">+</button></span></label>
     <div class="row">
       <label>Teléfono<input name="telefono" type="tel"></label>
       <label>Entrega prevista<input name="fecha_entrega" type="date"></label>
@@ -143,6 +155,27 @@ textarea{resize:vertical;min-height:84px}
       <button class="btn" id="save" value="ok">Guardar pedido</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="cdlg">
+  <div class="cwrap">
+    <div id="cview">
+      <div class="chead"><h3 id="ct">Clientes</h3><button class="btn ghost" id="cclose" type="button">Cerrar</button></div>
+      <div class="chead"><input class="search" id="cq" type="search" placeholder="Buscar cliente, teléfono o dirección" style="width:auto;flex:1" aria-label="Buscar cliente"><button class="btn" id="cadd" type="button">Añadir cliente</button></div>
+      <div id="clist"></div>
+    </div>
+    <form id="cf" hidden>
+      <h3 id="cft">Nuevo cliente</h3>
+      <label>Nombre<input name="nombre" required autocomplete="off"></label>
+      <label>Teléfono y contacto<input name="telefono" placeholder="Ej.: 600000000 (Ana) & 611111111 (Luis)"></label>
+      <label>Dirección de entrega<input name="direccion" autocomplete="off"></label>
+      <div class="acts">
+        <button type="button" class="btn danger" id="cdel">Eliminar</button>
+        <button type="button" class="btn ghost" id="ccancel">Volver</button>
+        <button class="btn">Guardar cliente</button>
+      </div>
+    </form>
+  </div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -202,7 +235,9 @@ async function remove(id){
   else { rows = rows.filter(r => r.id!==id); keep(rows); }
   await load();
 }
-if (live) sb.channel('pedidos').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},load).subscribe();
+if (live) sb.channel('cambios')
+  .on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},load)
+  .on('postgres_changes',{event:'*',schema:'public',table:'clientes'},loadC).subscribe();
 
 /* ---- interfaz ---- */
 const today = new Date().toISOString().slice(0,10);
@@ -271,10 +306,72 @@ f.onsubmit = async e => {
   if (editing) d.id = editing.id;
   closeD(); await upsert(d);
 };
+/* ---- clientes ---- */
+let cl = [], pick = false, cedit = null;
+const cdlg = $('#cdlg'), cf = $('#cf');
+const openX = d => d.showModal ? d.showModal() : d.setAttribute('open','');
+const closeX = d => d.close ? d.close() : d.removeAttribute('open');
+const sortC = a => a.sort((x,y) => x.nombre.localeCompare(y.nombre,'es') || (x.direccion||'').localeCompare(y.direccion||'','es'));
+const saveLocal = () => localStorage.setItem('carlin-clientes', JSON.stringify(cl));
+async function loadC(){
+  if (live){ const {data,error} = await sb.from('clientes').select('*'); if (error) return toast('No se pudieron cargar los clientes: '+error.message); cl = data; }
+  else cl = JSON.parse(localStorage.getItem('carlin-clientes') || '[]');
+  sortC(cl); if (cdlg.hasAttribute('open')) renderC();
+}
+async function saveC(c){
+  if (live){
+    const q = c.id ? sb.from('clientes').update(c).eq('id',c.id) : sb.from('clientes').insert(c);
+    const {data,error} = await q.select().single();
+    if (error){ toast('No se pudo guardar el cliente: '+error.message); return null; }
+    await loadC(); return data;
+  }
+  let r; if (c.id){ cl = cl.map(x => x.id===c.id ? (r = {...x,...c}) : x); } else { r = {...c, id:uid()}; cl.push(r); }
+  sortC(cl); saveLocal(); renderC(); return r;
+}
+async function delC(id){
+  if (live){ const {error} = await sb.from('clientes').delete().eq('id',id); if (error) return toast(error.message); await loadC(); }
+  else { cl = cl.filter(x => x.id!==id); saveLocal(); renderC(); }
+}
+function renderC(){
+  const q = $('#cq').value.trim().toLowerCase();
+  const list = cl.filter(c => !q || [c.nombre,c.telefono,c.direccion].join(' ').toLowerCase().includes(q));
+  $('#clist').innerHTML = list.map(c => `<button type="button" class="crow" data-c="${c.id}"><strong>${esc(c.nombre)}</strong>${c.telefono?`<span>${esc(c.telefono)}</span>`:''}${c.direccion?`<span>${esc(c.direccion)}</span>`:''}${!c.telefono||!c.direccion?'<span class="tag warn">Faltan datos</span>':''}</button>`).join('')
+    || `<div class="empty">${cl.length ? 'Ningún cliente coincide.' : 'Aún no hay clientes. Pulsa “Añadir cliente”.'}</div>`;
+  $('#ct').textContent = pick ? 'Elegir cliente' : 'Clientes (' + cl.length + ')';
+}
+function showList(){ cf.hidden = true; $('#cview').hidden = false; renderC(); }
+function showForm(c){
+  cedit = c; cf.reset();
+  cf.nombre.value = c ? c.nombre : ''; cf.telefono.value = (c && c.telefono) || ''; cf.direccion.value = (c && c.direccion) || '';
+  $('#cft').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
+  $('#cdel').style.display = c ? '' : 'none';
+  $('#cview').hidden = true; cf.hidden = false; cf.nombre.focus();
+}
+function openC(p){ pick = p; $('#cq').value = ''; showList(); openX(cdlg); }
+function choose(c){ f.cliente.value = c.nombre; f.telefono.value = c.telefono || ''; f.direccion.value = c.direccion || ''; closeX(cdlg); }
+$('#cbtn').onclick = () => openC(false);
+$('#pickc').onclick = () => openC(true);
+$('#cclose').onclick = () => closeX(cdlg);
+$('#cadd').onclick = () => showForm(null);
+$('#ccancel').onclick = showList;
+$('#cq').oninput = renderC;
+$('#clist').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; const c = cl.find(x => x.id===b.dataset.c); pick ? choose(c) : showForm(c); };
+$('#cdel').onclick = async () => { if (confirm('¿Eliminar este cliente? Los pedidos ya hechos no se borran.')){ await delC(cedit.id); showList(); } };
+cdlg.addEventListener('click', e => { if (e.target===cdlg) closeX(cdlg); });
+cf.onsubmit = async e => {
+  e.preventDefault();
+  const d = {nombre:cf.nombre.value.trim(), telefono:cf.telefono.value.trim() || null, direccion:cf.direccion.value.trim() || null};
+  if (cedit) d.id = cedit.id;
+  const r = await saveC(d); if (!r) return;
+  if (pick && !cedit) return choose(r);
+  showList();
+};
+
 function toast(m){ const t = document.createElement('div'); t.className='toast'; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),4000); }
 
 if (!live) toast('Modo local: añade tu anon key para guardar en Supabase');
 load();
+loadC();
 setInterval(load, 600000);
 </script>
 </body>

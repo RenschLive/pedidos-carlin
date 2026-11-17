@@ -3,28 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#C8102E">
+<meta name="theme-color" content="#EC0000">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pedidos">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="logo_carlin.png">
 <title>Pedidos · Carlin Lugo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --red:#C8102E;--red-d:#9E0C24;--ink:#1B2433;--bg:#F1F3F7;--card:#fff;--line:#DCE1EA;--mut:#5B6577;
+  --red:#EC0000;--red-d:#B80000;--grey:#C8C8C8;--ink:#222222;--bg:#F2F2F2;--card:#fff;--line:#DADADA;--mut:#5E5E5E;
   --amb:#8A4B00;--amb-bg:#FFF1D1;--amb-line:#F0B238;--ok:#1F7A4D;
   --ease:cubic-bezier(.23,1,.32,1);--head:"Bricolage Grotesque",system-ui,sans-serif;--body:Figtree,system-ui,sans-serif;
   --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)
 }
-@media(prefers-color-scheme:dark){:root{--bg:#10151F;--card:#1A2232;--ink:#EEF1F6;--line:#2B3548;--mut:#9AA6BA;--amb-bg:#2E2208;--amb:#F4C56A;--red:#E5384F}}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--card:#222;--ink:#F2F2F2;--line:#3A3A3A;--mut:#A8A8A8;--amb-bg:#2E2208;--amb:#F4C56A;--red:#FF3B3B}}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
+@supports(height:100dvh){html,body{height:100dvh}}
+*{-webkit-tap-highlight-color:transparent}
+button,.card,nav button{touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--body);padding-top:var(--safe-t);display:flex;flex-direction:column}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--red);outline-offset:2px}
 header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line)}
 .logo{display:flex;align-items:center;gap:10px;font:800 22px/1 var(--head);color:var(--red);letter-spacing:-.02em}
-.logo img{height:32px;display:block}
-.logo small{font:600 13px var(--body);color:var(--mut);letter-spacing:0}
+.logo img{height:30px;width:auto;display:block}
 .sp{flex:1}
 .search{width:min(280px,36vw);padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;background:var(--red);color:#fff;cursor:pointer;transition:transform .15s var(--ease),background .15s}
@@ -33,11 +42,11 @@ header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .btn.ghost:hover{background:var(--bg)}
 .btn.danger{background:transparent;color:var(--red);border:1px solid var(--line)}
-main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.15fr);gap:14px;padding:16px 20px;overflow:hidden}
+main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,1.15fr);gap:14px;padding:16px 20px;overflow:hidden}
 .col{display:flex;flex-direction:column;min-height:0}
 .col h2{margin:0 0 10px;font:800 15px var(--head);display:flex;align-items:center;gap:8px}
 .col h2 b{font:600 12px var(--body);background:var(--line);color:var(--mut);padding:1px 8px;border-radius:99px}
-.list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:12px;scrollbar-width:thin}
+.list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:12px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px;cursor:pointer;text-align:left;width:100%;transition:transform .18s var(--ease),border-color .18s,box-shadow .18s;animation:in .22s var(--ease)}
 .card:hover{border-color:var(--mut)}
 .card:active{transform:scale(.985)}
@@ -45,21 +54,22 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1f
 .card strong{display:block;font:800 16px/1.2 var(--head);letter-spacing:-.01em}
 .card p{margin:4px 0 0;color:var(--mut);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .meta{display:flex;gap:8px;align-items:center;margin-top:9px;font-size:12.5px;color:var(--mut);flex-wrap:wrap}
-.tag{padding:1px 8px;border-radius:99px;background:var(--bg);font-weight:600}
+.tag{padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--grey);font-weight:600}
 .tag.late{background:var(--red);color:#fff}
 .go{margin-top:10px;width:100%;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-weight:600;cursor:pointer;transition:transform .15s var(--ease),background .15s}
 .go:hover{background:var(--line)}
 .go:active{transform:scale(.97)}
 .col.urg{background:var(--amb-bg);border:1px solid var(--amb-line);border-radius:14px;padding:12px;margin:-4px 0;position:relative}
-.col.urg::before{content:"";position:absolute;inset:0 0 auto;height:6px;border-radius:14px 14px 0 0;background:repeating-linear-gradient(135deg,var(--amb-line) 0 8px,transparent 8px 16px)}
+.col.urg::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;border-radius:14px 14px 0 0;background:repeating-linear-gradient(135deg,var(--amb-line) 0 8px,transparent 8px 16px)}
 .col.urg h2{color:var(--amb);margin-top:6px}
 .col.urg .card{border-color:var(--amb-line)}
 .col.urg .csp{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--amb-bg);color:var(--amb);font-size:13px;white-space:pre-wrap}
 .empty{color:var(--mut);font-size:13.5px;padding:14px;border:1px dashed var(--line);border-radius:12px}
 nav{display:none}
-dialog{border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:92vh;background:var(--card);color:var(--ink);box-shadow:0 24px 60px rgba(0,0,0,.28)}
+dialog:not([open]){display:none}
+dialog{position:fixed;top:0;bottom:0;left:0;right:0;margin:auto;height:fit-content;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:92vh;background:var(--card);color:var(--ink);box-shadow:0 24px 60px rgba(0,0,0,.28)}
 dialog[open]{animation:pop .22s var(--ease)}
-dialog::backdrop{background:rgba(16,21,31,.5)}
+dialog::backdrop{background:rgba(22,22,22,.55)}
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}}
 form{padding:20px;display:grid;gap:12px}
 form h3{margin:0;font:800 20px var(--head)}
@@ -72,19 +82,23 @@ textarea{resize:vertical;min-height:84px}
 .csp-box.on{display:grid}
 .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:4px}
 .toast{position:fixed;left:50%;bottom:calc(20px + var(--safe-b));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:9;animation:in .2s var(--ease)}
+@media(min-width:901px) and (max-width:1360px){
+  main{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .col{scroll-snap-align:start}
+}
 @media(max-width:900px){
-  header{padding:10px 14px}.logo small{display:none}.search{flex:1;width:auto}
+  header{padding:10px 14px}.search{flex:1;width:auto}
   main{display:block;padding:12px 14px;overflow:auto}
   .col{display:none;height:100%}
-  body[data-tab=entrada] .col[data-s=entrada],body[data-tab=en_curso] .col[data-s=en_curso],body[data-tab=en_reparto] .col[data-s=en_reparto],body[data-tab=servido] .col[data-s=servido],body[data-tab=incompleto] .col[data-s=incompleto]{display:flex}
-  .col h2{display:none}.col.urg{margin:0}
-  nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
-  nav button{border:0;background:none;padding:10px 2px 9px;font-size:11.5px;font-weight:600;color:var(--mut);cursor:pointer;border-top:3px solid transparent;transition:color .15s,border-color .15s}
+  body[data-tab=entrada] .col[data-s=entrada],body[data-tab=en_curso] .col[data-s=en_curso],body[data-tab=empaquetado] .col[data-s=empaquetado],body[data-tab=en_reparto] .col[data-s=en_reparto],body[data-tab=servido] .col[data-s=servido],body[data-tab=incompleto] .col[data-s=incompleto]{display:flex}
+  .col h2{display:none}.col.urg{margin:0}.col>.list{width:100%;max-width:680px;margin:0 auto}
+  nav{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--card);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+  nav button{flex:1 0 auto;min-width:68px;border:0;background:none;padding:10px 8px 9px;font-size:11.5px;font-weight:600;color:var(--mut);cursor:pointer;border-top:3px solid transparent;transition:color .15s,border-color .15s}
   nav button b{display:block;font:800 17px var(--head);color:var(--ink)}
   nav button[aria-selected=true]{color:var(--red);border-color:var(--red)}
   nav button.u[aria-selected=true]{color:var(--amb);border-color:var(--amb-line)}
   nav button.u b{color:var(--amb)}
-  .fab{position:fixed;right:16px;bottom:calc(78px + var(--safe-b));box-shadow:0 8px 20px rgba(200,16,46,.35);border-radius:99px;padding:14px 20px}
+  .fab{position:fixed;right:16px;bottom:calc(78px + var(--safe-b));box-shadow:0 8px 20px rgba(236,0,0,.35);border-radius:99px;padding:14px 20px}
   .row{grid-template-columns:1fr}
 }
 @media(min-width:901px){.fab{display:none}}
@@ -94,8 +108,7 @@ textarea{resize:vertical;min-height:84px}
 <body data-tab="entrada">
 <header>
   <div class="logo">
-    <img src="logo.png" alt="Carlin" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'Carlin'}))">
-    <small>Lugo · Pedidos</small>
+    <img src="logo_carlin.png" alt="Carlin">
   </div>
   <div class="sp"></div>
   <input class="search" id="q" type="search" placeholder="Buscar cliente o producto" aria-label="Buscar pedido">
@@ -142,7 +155,8 @@ const CFG = {
 /* ========================= */
 const ST = [
   {id:'entrada',    n:'Entrada',    next:'en_curso',   go:'Pasar a En curso'},
-  {id:'en_curso',   n:'En curso',   next:'en_reparto', go:'Listo para reparto'},
+  {id:'en_curso',   n:'En curso',   next:'empaquetado', go:'Pasar a Empaquetado'},
+  {id:'empaquetado', n:'Empaquetado', next:'en_reparto', go:'Listo para reparto'},
   {id:'en_reparto', n:'En reparto', next:'servido',    go:'Marcar servido'},
   {id:'servido',    n:'Servido'},
   {id:'incompleto', n:'Urgencia / Incompleto', next:'en_curso', go:'Resuelto, volver a En curso', urg:1}
@@ -154,21 +168,31 @@ const sb = live ? supabase.createClient(CFG.url, CFG.key) : null;
 let rows = [], editing = null;
 
 /* ---- datos: Supabase, o modo local si aún no hay clave ---- */
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 const LS = 'carlin-pedidos';
 const local = () => JSON.parse(localStorage.getItem(LS) || '[]');
 const keep = r => localStorage.setItem(LS, JSON.stringify(r));
 async function load(){
   if (live){ const {data,error} = await sb.from('pedidos').select('*').order('created_at',{ascending:false}); if (error) return toast('No se pudo cargar: '+error.message); rows = data; }
   else rows = local();
+  await purge();
   render();
 }
+async function purge(){
+  const cut = Date.now() - 864e5;
+  const old = rows.filter(r => r.estado==='servido' && r.servido_at && new Date(r.servido_at).getTime() < cut);
+  if (!old.length) return;
+  rows = rows.filter(r => !old.includes(r));
+  if (live) await sb.from('pedidos').delete().in('id', old.map(r => r.id)); else keep(rows);
+}
 async function upsert(p){
+  if (p.estado){ const o = rows.find(r => r.id===p.id); p.servido_at = p.estado==='servido' ? ((o && o.estado==='servido' && o.servido_at) || new Date().toISOString()) : null; }
   if (live){
     const {error} = p.id ? await sb.from('pedidos').update(p).eq('id',p.id) : await sb.from('pedidos').insert(p);
     if (error) return toast('No se pudo guardar: '+error.message);
   } else {
     if (p.id) rows = rows.map(r => r.id===p.id ? {...r,...p} : r);
-    else rows.unshift({...p, id:crypto.randomUUID(), created_at:new Date().toISOString()});
+    else rows.unshift({...p, id:uid(), created_at:new Date().toISOString()});
     keep(rows);
   }
   await load();
@@ -192,6 +216,7 @@ function card(r, s){
     <div class="meta">
       ${r.fecha_entrega ? `<span class="tag ${late?'late':''}">${late?'Atrasado · ':''}${fmtDate(r.fecha_entrega)}</span>` : ''}
       ${r.importe ? `<span>${Number(r.importe).toLocaleString('es-ES',{style:'currency',currency:'EUR'})}</span>` : ''}
+      ${r.estado==='servido' && r.servido_at ? `<span>Se borra en ${Math.max(1,Math.ceil((new Date(r.servido_at).getTime()+864e5-Date.now())/36e5))} h</span>` : ''}
     </div>
     ${s.next ? `<button class="go" data-go="${r.id}">${s.go}</button>` : ''}
   </article>`;
@@ -207,6 +232,7 @@ function render(){
     </section>`;
   }).join('');
   $('#tabs').innerHTML = ST.map(s => `<button role="tab" class="${s.urg?'u':''}" data-t="${s.id}" aria-selected="${document.body.dataset.tab===s.id}"><b>${rows.filter(r=>r.estado===s.id).length}</b>${s.urg?'Urgente':s.n}</button>`).join('');
+  const t = $('#tabs'), a = t.querySelector('[aria-selected=true]'); if (a) t.scrollLeft = a.offsetLeft - (t.clientWidth - a.offsetWidth)/2;
 }
 $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b){ document.body.dataset.tab = b.dataset.t; render(); } };
 $('#q').oninput = render;
@@ -220,6 +246,8 @@ $('#board').onkeydown = e => { if (e.key==='Enter' && e.target.classList.contain
 
 /* ---- formulario ---- */
 const f = $('#f'), dlg = $('#dlg');
+const openD = () => dlg.showModal ? dlg.showModal() : dlg.setAttribute('open','');
+const closeD = () => dlg.close ? dlg.close() : dlg.removeAttribute('open');
 $('#est').innerHTML = ST.map(s => `<option value="${s.id}">${s.n}</option>`).join('');
 const syncCsp = () => $('#cspb').classList.toggle('on', f.estado.value==='incompleto');
 $('#est').onchange = syncCsp;
@@ -229,24 +257,25 @@ function open(id){
   for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','estado'])
     f[k].value = editing ? (editing[k] ?? '') : (k==='estado' ? document.body.dataset.tab : '');
   $('#del').style.display = editing ? '' : 'none';
-  syncCsp(); dlg.showModal();
+  syncCsp(); openD();
 }
 $('#new').onclick = $('#fab').onclick = () => open(null);
-$('#cancel').onclick = () => dlg.close();
-dlg.addEventListener('click', e => { if (e.target===dlg) dlg.close(); });
-$('#del').onclick = async () => { if (confirm('¿Eliminar este pedido? No se puede deshacer.')){ dlg.close(); await remove(editing.id); } };
+$('#cancel').onclick = () => closeD();
+dlg.addEventListener('click', e => { if (e.target===dlg) closeD(); });
+$('#del').onclick = async () => { if (confirm('¿Eliminar este pedido? No se puede deshacer.')){ closeD(); await remove(editing.id); } };
 f.onsubmit = async e => {
   e.preventDefault();
   const d = Object.fromEntries(new FormData(f));
   d.importe = d.importe === '' ? null : Number(d.importe);
   d.fecha_entrega = d.fecha_entrega || null;
   if (editing) d.id = editing.id;
-  dlg.close(); await upsert(d);
+  closeD(); await upsert(d);
 };
 function toast(m){ const t = document.createElement('div'); t.className='toast'; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),4000); }
 
 if (!live) toast('Modo local: añade tu anon key para guardar en Supabase');
 load();
+setInterval(load, 600000);
 </script>
 </body>
 </html>

@@ -67,6 +67,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1f
 .empty{color:var(--mut);font-size:13.5px;padding:14px;border:1px dashed var(--line);border-radius:12px}
 nav{display:none}
 [hidden]{display:none!important}
+.track{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--mut)}.track b{color:var(--ink);font-family:var(--head);letter-spacing:.03em}
 .icon{padding:9px 11px;display:grid;place-items:center}.icon svg{width:20px;height:20px}
 .pick{display:flex;gap:8px}.pick input{flex:1;min-width:0}.pick .btn{padding:0 16px;font-size:22px;line-height:1}
 .cwrap{padding:20px;display:grid;gap:12px}
@@ -149,6 +150,7 @@ textarea{resize:vertical;min-height:84px}
       <label>Pedido a Comercial del Sur (C.S.P.)<textarea name="pedido_csp" placeholder="Qué falta y qué se ha pedido a C.S.P."></textarea></label>
     </div>
     <label>Notas<textarea name="notas" style="min-height:56px"></textarea></label>
+    <div class="track" id="trk" hidden><span>Seguimiento del cliente: <b id="trkc"></b></span><button type="button" class="btn ghost" id="trkb">Copiar enlace</button></div>
     <div class="acts">
       <button type="button" class="btn danger" id="del">Eliminar</button>
       <button type="button" class="btn ghost" id="cancel">Cancelar</button>
@@ -292,6 +294,7 @@ function open(id){
   for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','estado'])
     f[k].value = editing ? (editing[k] ?? '') : (k==='estado' ? document.body.dataset.tab : '');
   $('#del').style.display = editing ? '' : 'none';
+  $('#trk').hidden = !(editing && editing.codigo); if (editing) $('#trkc').textContent = editing.codigo || '';
   syncCsp(); openD();
 }
 $('#new').onclick = $('#fab').onclick = () => open(null);
@@ -367,6 +370,10 @@ cf.onsubmit = async e => {
   showList();
 };
 
+$('#trkb').onclick = async () => {
+  const u = new URL('seguimiento.html?c=' + editing.codigo, location.href).href;
+  try { await navigator.clipboard.writeText(u); toast('Enlace copiado'); } catch(e){ prompt('Copia el enlace:', u); }
+};
 function toast(m){ const t = document.createElement('div'); t.className='toast'; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),4000); }
 
 if (!live) toast('Modo local: añade tu anon key para guardar en Supabase');

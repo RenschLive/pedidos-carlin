@@ -185,6 +185,7 @@ textarea{resize:vertical;min-height:84px}
 /* ===== CONFIGURACIÓN ===== */
 const CFG = {
   url: 'https://ioiwbwiyeuamzxmgypqa.supabase.co',
+  track: 'https://tracking.carlinlugo.com/',   // dirección de la página de seguimiento para clientes
   key: 'sb_publishable_IZNAwtdKYKlHZLxBVPw_Pw_v2qzxcog'          // Supabase → Project Settings → API → anon public
 };
 /* ========================= */
@@ -371,7 +372,7 @@ cf.onsubmit = async e => {
 };
 
 $('#trkb').onclick = async () => {
-  const u = new URL('seguimiento.html?c=' + editing.codigo, location.href).href;
+  const u = CFG.track + '?c=' + encodeURIComponent(editing.codigo);
   try { await navigator.clipboard.writeText(u); toast('Enlace copiado'); } catch(e){ prompt('Copia el enlace:', u); }
 };
 function toast(m){ const t = document.createElement('div'); t.className='toast'; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),4000); }

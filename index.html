@@ -69,6 +69,16 @@ nav{display:none}
 [hidden]{display:none!important}
 .track{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--mut)}.track b{color:var(--ink);font-family:var(--head);letter-spacing:.03em}
 #sf1{padding:0}#sc{display:grid;gap:12px}#sc p{margin:0;color:var(--mut)}#sc b{color:var(--ink)}
+.recb{display:grid;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.recb small{color:var(--mut)}
+body[data-auth=out]>:not(#login){display:none!important}
+body[data-auth=in]>#login{display:none}
+#login{flex:1;display:grid;place-items:center;padding:20px}
+#lf{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.08);animation:pop .3s var(--ease)}
+#lf img{height:34px;width:auto;justify-self:center;margin-bottom:4px}#lf h1{margin:0 0 6px;text-align:center;font:800 22px var(--head)}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500}.chk input{width:18px;height:18px;padding:0;accent-color:var(--red)}
+#lerr{margin:0;min-height:20px;color:var(--red);font-weight:600;font-size:14px}
+.who{font-size:13px;font-weight:600;color:var(--mut)}
+@media(max-width:900px){.who{display:none}}
 .icon{padding:9px 11px;display:grid;place-items:center}.icon svg{width:20px;height:20px}
 .pick{display:flex;gap:8px}.pick input{flex:1;min-width:0}.pick .btn{padding:0 16px;font-size:22px;line-height:1}
 .cwrap{padding:20px;display:grid;gap:12px}
@@ -118,13 +128,26 @@ textarea{resize:vertical;min-height:84px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body data-tab="entrada">
+<body data-tab="entrada" data-auth="out">
+<div id="login">
+  <form id="lf">
+    <img src="logo_carlin.png" alt="Carlin">
+    <h1>Panel de pedidos</h1>
+    <label>Usuario<input id="lu" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></label>
+    <label>Contraseña<input id="lpass" type="password" autocomplete="current-password" required></label>
+    <label class="chk"><input type="checkbox" id="lkeep"> Mantener la sesión iniciada</label>
+    <p id="lerr" role="alert"></p>
+    <button class="btn" id="lgo">Entrar</button>
+  </form>
+</div>
 <header>
   <div class="logo">
     <img src="logo_carlin.png" alt="Carlin">
   </div>
   <div class="sp"></div>
   <input class="search" id="q" type="search" placeholder="Buscar cliente o producto" aria-label="Buscar pedido">
+  <span class="who" id="who"></span>
+  <button class="btn ghost icon" id="out" type="button" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
   <button class="btn ghost icon" id="cbtn" type="button" aria-label="Clientes" title="Clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5M4 12v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V12"/></svg></button>
   <button class="btn" id="new">Nuevo pedido</button>
 </header>
@@ -142,7 +165,12 @@ textarea{resize:vertical;min-height:84px}
       <label>Entrega prevista<input name="fecha_entrega" type="date"></label>
     </div>
     <label>Dirección de entrega<input name="direccion" autocomplete="off"></label>
-    <label>Productos<textarea name="productos" placeholder="Ej.: 10 cajas de folios A4, 4 archivadores…"></textarea></label>
+    <label id="lp">Productos<textarea name="productos" placeholder="Ej.: 10 cajas de folios A4, 4 archivadores…"></textarea></label>
+    <div class="recb" id="recb" hidden>
+      <label>Recibido por<input name="recibido_por" autocomplete="off"></label>
+      <label>DNI / NIE<input name="recibido_dni" autocapitalize="characters" maxlength="10" pattern="[XYZxyz]?[0-9]{7,8}[A-Za-z]" title="DNI (8 cifras y letra) o NIE (X, Y o Z, 7 cifras y letra)"></label>
+      <small id="rec-when"></small>
+    </div>
     <div class="row">
       <label>Importe (€)<input name="importe" type="number" step="0.01" inputmode="decimal"></label>
       <label>Estado<select name="estado" id="est"></select></label>
@@ -151,7 +179,7 @@ textarea{resize:vertical;min-height:84px}
       <label>Pedido a Proveedor (C.S.P & Otros)<textarea name="pedido_csp" placeholder="Qué falta y qué se ha pedido. Si es a otro proveedor, anota cuál y la referencia"></textarea></label>
       <label>Incidencia (la verá el cliente en el seguimiento)<textarea name="incidencia" style="min-height:56px" placeholder="Ej.: Falta un artículo, llegará el jueves"></textarea></label>
     </div>
-    <label>Notas<textarea name="notas" style="min-height:56px"></textarea></label>
+    <label id="ln">Notas<textarea name="notas" style="min-height:56px"></textarea></label>
     <div class="track" id="trk" hidden><span>Seguimiento del cliente: <b id="trkc"></b></span><button type="button" class="btn ghost" id="trkb">Copiar enlace</button></div>
     <div class="acts">
       <button type="button" class="btn danger" id="del">Eliminar</button>
@@ -204,6 +232,7 @@ textarea{resize:vertical;min-height:84px}
 const CFG = {
   url: 'https://ioiwbwiyeuamzxmgypqa.supabase.co',
   track: 'https://tracking.carlinlugo.com/',   // dirección de la página de seguimiento para clientes
+  dominio: 'carlinlugo.com',                   // los usuarios de Supabase son usuario@dominio (ej. gabriel@carlinlugo.com)
   key: 'sb_publishable_IZNAwtdKYKlHZLxBVPw_Pw_v2qzxcog'          // Supabase → Project Settings → API → anon public
 };
 /* ========================= */
@@ -218,7 +247,14 @@ const ST = [
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const live = CFG.key && !CFG.key.startsWith('PEGA');
-const sb = live ? supabase.createClient(CFG.url, CFG.key) : null;
+/* sesión: con «mantener sesión» se guarda en el dispositivo; si no, solo mientras esté abierta la pestaña */
+let mantener = localStorage.getItem('carlin-keep') === '1';
+const store = {
+  getItem: k => localStorage.getItem(k) ?? sessionStorage.getItem(k),
+  setItem: (k,v) => { (mantener ? localStorage : sessionStorage).setItem(k,v); (mantener ? sessionStorage : localStorage).removeItem(k); },
+  removeItem: k => { localStorage.removeItem(k); sessionStorage.removeItem(k); }
+};
+const sb = live ? supabase.createClient(CFG.url, CFG.key, {auth:{storage:store, persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}}) : null;
 let rows = [], editing = null;
 
 /* ---- datos: Supabase, o modo local si aún no hay clave ---- */
@@ -256,9 +292,11 @@ async function remove(id){
   else { rows = rows.filter(r => r.id!==id); keep(rows); }
   await load();
 }
-if (live) sb.channel('cambios')
+let rt = null;
+const startRT = () => { if (live && !rt) rt = sb.channel('cambios')
   .on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},load)
-  .on('postgres_changes',{event:'*',schema:'public',table:'clientes'},loadC).subscribe();
+  .on('postgres_changes',{event:'*',schema:'public',table:'clientes'},loadC).subscribe(); };
+const stopRT = () => { if (rt){ sb.removeChannel(rt); rt = null; } };
 
 /* ---- interfaz ---- */
 const today = new Date().toISOString().slice(0,10);
@@ -267,7 +305,7 @@ function card(r, s){
   const late = r.fecha_entrega && r.fecha_entrega < today && r.estado !== 'servido';
   return `<article class="card" data-id="${r.id}" tabindex="0" role="button" aria-label="Abrir pedido de ${esc(r.cliente)}">
     <strong>${esc(r.cliente)}</strong>
-    <p>${esc(r.productos) || 'Sin productos detallados'}</p>
+    <p>${r.estado==='servido' && r.recibido_por ? 'Recibió: ' + esc(r.recibido_por) : esc(r.productos) || 'Sin productos detallados'}</p>
     ${s.urg && r.pedido_csp ? `<div class="csp">Proveedor: ${esc(r.pedido_csp)}</div>` : ''}
     <div class="meta">
       ${r.fecha_entrega ? `<span class="tag ${late?'late':''}">${late?'Atrasado · ':''}${fmtDate(r.fecha_entrega)}</span>` : ''}
@@ -305,13 +343,18 @@ const f = $('#f'), dlg = $('#dlg');
 const openD = () => dlg.showModal ? dlg.showModal() : dlg.setAttribute('open','');
 const closeD = () => dlg.close ? dlg.close() : dlg.removeAttribute('open');
 $('#est').innerHTML = ST.map(s => `<option value="${s.id}">${s.n}</option>`).join('');
-const syncCsp = () => $('#cspb').classList.toggle('on', f.estado.value==='incompleto');
+const syncCsp = () => {
+  $('#cspb').classList.toggle('on', f.estado.value==='incompleto');
+  const sv = !!editing && editing.estado==='servido' && f.estado.value==='servido';   // servido: se ve quién recibió y se ocultan Productos y Notas (los datos se conservan)
+  $('#recb').hidden = !sv; $('#lp').hidden = sv; $('#ln').hidden = sv;
+};
 $('#est').onchange = syncCsp;
 function open(id){
   editing = rows.find(r => r.id===id) || null; f.reset();
   $('#ft').textContent = editing ? 'Pedido de ' + editing.cliente : 'Nuevo pedido';
-  for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','incidencia','estado'])
+  for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','incidencia','recibido_por','recibido_dni','estado'])
     f[k].value = editing ? (editing[k] ?? '') : (k==='estado' ? document.body.dataset.tab : '');
+  $('#rec-when').textContent = editing && editing.servido_at ? 'Marcado como servido: ' + new Date(editing.servido_at).toLocaleString('es-ES',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
   $('#del').style.display = editing ? '' : 'none';
   $('#trk').hidden = !(editing && editing.codigo); if (editing) $('#trkc').textContent = editing.codigo || '';
   syncCsp(); openD();
@@ -325,6 +368,8 @@ f.onsubmit = async e => {
   const d = Object.fromEntries(new FormData(f));
   d.importe = d.importe === '' ? null : Number(d.importe);
   d.fecha_entrega = d.fecha_entrega || null;
+  d.recibido_por = d.recibido_por ? d.recibido_por.trim() : null;
+  d.recibido_dni = d.recibido_dni ? d.recibido_dni.trim().toUpperCase() : null;
   if (editing) d.id = editing.id;
   if (d.estado==='servido' && !(editing && editing.estado==='servido')) return askServido(d);
   closeD(); await upsert(d);
@@ -413,9 +458,29 @@ $('#trkb').onclick = async () => {
 function toast(m){ const t = document.createElement('div'); t.className='toast'; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),4000); }
 
 if (!live) toast('Modo local: añade tu anon key para guardar en Supabase');
-load();
-loadC();
-setInterval(load, 600000);
+/* ---- acceso ---- */
+function setAuth(on, email){
+  document.body.dataset.auth = on ? 'in' : 'out';
+  if (on){ $('#who').textContent = (email || '').split('@')[0]; load(); loadC(); startRT(); }
+  else { stopRT(); rows = []; cl = []; [dlg, cdlg, sdlg].forEach(closeX); render(); $('#lu').focus(); }
+}
+if (live){
+  let signed = null;
+  sb.auth.onAuthStateChange((ev, ses) => setTimeout(() => { const on = !!ses; if (on === signed) return; signed = on; setAuth(on, ses && ses.user.email); }, 0));
+  $('#lkeep').checked = mantener;
+  $('#lf').onsubmit = async e => {
+    e.preventDefault();
+    const u = $('#lu').value.trim().toLowerCase();
+    $('#lerr').textContent = ''; $('#lgo').disabled = true;
+    mantener = $('#lkeep').checked; localStorage.setItem('carlin-keep', mantener ? '1' : '0');
+    const {error} = await sb.auth.signInWithPassword({email: u.includes('@') ? u : u + '@' + CFG.dominio, password: $('#lpass').value});
+    $('#lgo').disabled = false;
+    if (error){ $('#lerr').textContent = 'Usuario o contraseña incorrectos.'; return; }
+    $('#lpass').value = '';
+  };
+  $('#out').onclick = () => sb.auth.signOut();
+} else { $('#out').hidden = true; setAuth(true, 'local'); }   // modo local de prueba: sin acceso
+setInterval(() => { if (document.body.dataset.auth === 'in') load(); }, 600000);
 </script>
 </body>
 </html>

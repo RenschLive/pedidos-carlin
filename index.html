@@ -68,6 +68,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1f
 nav{display:none}
 [hidden]{display:none!important}
 .track{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--mut)}.track b{color:var(--ink);font-family:var(--head);letter-spacing:.03em}
+#sf1{padding:0}#sc{display:grid;gap:12px}#sc p{margin:0;color:var(--mut)}#sc b{color:var(--ink)}
 .icon{padding:9px 11px;display:grid;place-items:center}.icon svg{width:20px;height:20px}
 .pick{display:flex;gap:8px}.pick input{flex:1;min-width:0}.pick .btn{padding:0 16px;font-size:22px;line-height:1}
 .cwrap{padding:20px;display:grid;gap:12px}
@@ -147,7 +148,8 @@ textarea{resize:vertical;min-height:84px}
       <label>Estado<select name="estado" id="est"></select></label>
     </div>
     <div class="csp-box" id="cspb">
-      <label>Pedido a Comercial del Sur (C.S.P.)<textarea name="pedido_csp" placeholder="Qué falta y qué se ha pedido a C.S.P."></textarea></label>
+      <label>Pedido a Proveedor (C.S.P & Otros)<textarea name="pedido_csp" placeholder="Qué falta y qué se ha pedido. Si es a otro proveedor, anota cuál y la referencia"></textarea></label>
+      <label>Incidencia (la verá el cliente en el seguimiento)<textarea name="incidencia" style="min-height:56px" placeholder="Ej.: Falta un artículo, llegará el jueves"></textarea></label>
     </div>
     <label>Notas<textarea name="notas" style="min-height:56px"></textarea></label>
     <div class="track" id="trk" hidden><span>Seguimiento del cliente: <b id="trkc"></b></span><button type="button" class="btn ghost" id="trkb">Copiar enlace</button></div>
@@ -177,6 +179,22 @@ textarea{resize:vertical;min-height:84px}
         <button class="btn">Guardar cliente</button>
       </div>
     </form>
+  </div>
+</dialog>
+
+<dialog id="sdlg">
+  <div class="cwrap">
+    <form id="sf1">
+      <h3>Entrega del pedido</h3>
+      <label>Nombre de la persona que recibió el paquete<input name="nom" required autocomplete="off"></label>
+      <label>DNI / NIE<input name="dni" required autocomplete="off" autocapitalize="characters" maxlength="10" pattern="[XYZxyz]?[0-9]{7,8}[A-Za-z]" title="DNI (8 cifras y letra) o NIE (X, Y o Z, 7 cifras y letra)"></label>
+      <div class="acts"><button type="button" class="btn ghost" id="s-cancel">Cancelar</button><button class="btn">Continuar</button></div>
+    </form>
+    <div id="sc" hidden>
+      <h3>¿Marcar como servido?</h3>
+      <p id="sc-txt"></p>
+      <div class="acts"><button type="button" class="btn danger" id="s-drop">Descartar</button><button type="button" class="btn ghost" id="s-back">Cancelar</button><button type="button" class="btn" id="s-ok">Sí, marcar como servido</button></div>
+    </div>
   </div>
 </dialog>
 
@@ -222,7 +240,7 @@ async function purge(){
   if (live) await sb.from('pedidos').delete().in('id', old.map(r => r.id)); else keep(rows);
 }
 async function upsert(p){
-  if (p.estado){ const o = rows.find(r => r.id===p.id); p.servido_at = p.estado==='servido' ? ((o && o.estado==='servido' && o.servido_at) || new Date().toISOString()) : null; }
+  if (p.estado){ const o = rows.find(r => r.id===p.id); p.servido_at = p.estado==='servido' ? ((o && o.estado==='servido' && o.servido_at) || new Date().toISOString()) : null; if (p.estado!=='servido'){ p.recibido_por = null; p.recibido_dni = null; } }
   if (live){
     const {error} = p.id ? await sb.from('pedidos').update(p).eq('id',p.id) : await sb.from('pedidos').insert(p);
     if (error) return toast('No se pudo guardar: '+error.message);
@@ -250,7 +268,7 @@ function card(r, s){
   return `<article class="card" data-id="${r.id}" tabindex="0" role="button" aria-label="Abrir pedido de ${esc(r.cliente)}">
     <strong>${esc(r.cliente)}</strong>
     <p>${esc(r.productos) || 'Sin productos detallados'}</p>
-    ${s.urg && r.pedido_csp ? `<div class="csp">C.S.P.: ${esc(r.pedido_csp)}</div>` : ''}
+    ${s.urg && r.pedido_csp ? `<div class="csp">Proveedor: ${esc(r.pedido_csp)}</div>` : ''}
     <div class="meta">
       ${r.fecha_entrega ? `<span class="tag ${late?'late':''}">${late?'Atrasado · ':''}${fmtDate(r.fecha_entrega)}</span>` : ''}
       ${r.importe ? `<span>${Number(r.importe).toLocaleString('es-ES',{style:'currency',currency:'EUR'})}</span>` : ''}
@@ -277,7 +295,7 @@ $('#q').oninput = render;
 
 $('#board').onclick = e => {
   const g = e.target.closest('[data-go]');
-  if (g){ e.stopPropagation(); const r = rows.find(x => x.id===g.dataset.go), s = ST.find(x => x.id===r.estado); return upsert({id:r.id, estado:s.next}); }
+  if (g){ e.stopPropagation(); const r = rows.find(x => x.id===g.dataset.go), s = ST.find(x => x.id===r.estado); return move(r.id, s.next); }
   const c = e.target.closest('.card'); if (c) open(c.dataset.id);
 };
 $('#board').onkeydown = e => { if (e.key==='Enter' && e.target.classList.contains('card')) open(e.target.dataset.id); };
@@ -292,7 +310,7 @@ $('#est').onchange = syncCsp;
 function open(id){
   editing = rows.find(r => r.id===id) || null; f.reset();
   $('#ft').textContent = editing ? 'Pedido de ' + editing.cliente : 'Nuevo pedido';
-  for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','estado'])
+  for (const k of ['cliente','telefono','direccion','productos','importe','fecha_entrega','notas','pedido_csp','incidencia','estado'])
     f[k].value = editing ? (editing[k] ?? '') : (k==='estado' ? document.body.dataset.tab : '');
   $('#del').style.display = editing ? '' : 'none';
   $('#trk').hidden = !(editing && editing.codigo); if (editing) $('#trkc').textContent = editing.codigo || '';
@@ -308,6 +326,7 @@ f.onsubmit = async e => {
   d.importe = d.importe === '' ? null : Number(d.importe);
   d.fecha_entrega = d.fecha_entrega || null;
   if (editing) d.id = editing.id;
+  if (d.estado==='servido' && !(editing && editing.estado==='servido')) return askServido(d);
   closeD(); await upsert(d);
 };
 /* ---- clientes ---- */
@@ -371,6 +390,22 @@ cf.onsubmit = async e => {
   showList();
 };
 
+/* ---- entrega (servido) ---- */
+const sdlg = $('#sdlg'), s1 = $('#sf1'); let pend = null;
+function askServido(d){ pend = d; s1.reset(); $('#sc').hidden = true; s1.hidden = false; openX(sdlg); s1.nom.focus(); }
+function move(id, estado){ return estado==='servido' ? askServido({id, estado}) : upsert({id, estado}); }
+s1.onsubmit = e => {
+  e.preventDefault();
+  $('#sc-txt').innerHTML = `Recibe: <b>${esc(s1.nom.value.trim())}</b><br>DNI / NIE: <b>${esc(s1.dni.value.trim().toUpperCase())}</b><br>Se registrará la entrega con la fecha y hora de ahora y la verá el cliente en el seguimiento.`;
+  s1.hidden = true; $('#sc').hidden = false;
+};
+$('#s-back').onclick = () => { $('#sc').hidden = true; s1.hidden = false; s1.nom.focus(); };
+const dropS = () => { closeX(sdlg); pend = null; f.estado.value = editing ? editing.estado : 'entrada'; syncCsp(); };
+$('#s-cancel').onclick = $('#s-drop').onclick = dropS;
+$('#s-ok').onclick = async () => {
+  const d = {...pend, recibido_por:s1.nom.value.trim(), recibido_dni:s1.dni.value.trim().toUpperCase()};
+  pend = null; closeX(sdlg); closeD(); await upsert(d);
+};
 $('#trkb').onclick = async () => {
   const u = CFG.track + '?c=' + encodeURIComponent(editing.codigo);
   try { await navigator.clipboard.writeText(u); toast('Enlace copiado'); } catch(e){ prompt('Copia el enlace:', u); }
